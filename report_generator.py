@@ -145,7 +145,16 @@ class PDFReportGenerator:
             Paragraph("<b>Mitigation Suggestions</b>", self.styles['Heading2'])
         )
 
+        seen_mitigations = set()
+
         for item in mitigation_data:
+
+            key = (item['service'], item['severity'])
+
+            if key in seen_mitigations:
+                continue
+
+            seen_mitigations.add(key)
 
             content = f"""
             <b>Service:</b> {item['service']}<br/>
