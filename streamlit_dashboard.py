@@ -7,7 +7,9 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import os
+import re
 import glob
+import requests
 from datetime import datetime
 from collections import Counter
 
@@ -155,13 +157,39 @@ details summary { color:#64748b; font-size:12px; padding:0.5rem 0.75rem; cursor:
 # ── Session state ─────────────────────────────────────────────────────────────
 
 for key, default in [
-    ("scanner",     None),
-    ("scan_done",   False),
-    ("scan_log",    []),
-    ("scan_target", ""),
+    ("scanner",      None),
+    ("scan_done",    False),
+    ("scan_log",     []),
+    ("scan_target",  ""),
+    ("nvd_status",   None),   # None = unchecked, True = online, False = offline
 ]:
     if key not in st.session_state:
         st.session_state[key] = default
+
+# NVD health check — runs once per session
+if st.session_state.nvd_status is None:
+    try:
+        r = requests.get(
+            "https://services.nvd.nist.gov/rest/json/cves/2.0",
+            params={"resultsPerPage": 1},
+            timeout=5
+        )
+        st.session_state.nvd_status = r.status_code == 200
+    except Exception:
+        st.session_state.nvd_status = False
+
+
+def is_valid_target(target: str) -> bool:
+    """
+    Accept IPv4 addresses, IPv6 addresses, hostnames, and CIDR ranges.
+    Reject anything that looks like nmap flags or shell injection.
+    """
+    target = target.strip()
+    # IPv4 with optional CIDR
+    ipv4 = r"^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?$"
+    # Hostname (letters, digits, hyphens, dots)
+    hostname = r"^[a-zA-Z0-9]([a-zA-Z0-9\-\.]{0,252}[a-zA-Z0-9])?$"
+    return bool(re.match(ipv4, target) or re.match(hostname, target))
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -240,6 +268,10 @@ target_display = st.session_state.scan_target or "no target"
 status_label   = "scan active" if st.session_state.scan_done else "idle"
 status_cls     = "t-ok" if st.session_state.scan_done else ""
 
+nvd_online     = st.session_state.nvd_status
+nvd_label      = "nvd api online" if nvd_online else "nvd api offline"
+nvd_cls        = "t-ok" if nvd_online else "lerr"
+
 st.markdown(f"""
 <div class="topbar">
   <div class="topbar-left">
@@ -251,7 +283,7 @@ st.markdown(f"""
   <div class="topbar-right">
     <span class="{status_cls}">{status_label}</span>
     <span>{target_display}</span>
-    <span class="t-ok">nvd api online</span>
+    <span class="{nvd_cls}">{nvd_label}</span>
     <span>cvss v3.1</span>
   </div>
 </div>
@@ -309,6 +341,11 @@ with st.sidebar:
 if scan_button:
     if not scan_target:
         st.error("enter a valid target.")
+    elif not is_valid_target(scan_target):
+        st.error(
+            "invalid target — enter an IPv4 address (e.g. 192.168.1.1), "
+            "a CIDR range (e.g. 192.168.1.0/24), or a hostname (e.g. scanme.nmap.org)."
+        )
     else:
         st.session_state.scan_target = scan_target
         st.session_state.scan_log    = []

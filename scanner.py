@@ -6,6 +6,7 @@ import nmap
 import sys
 import os
 import json
+import logging
 import pandas as pd
 
 from datetime import datetime
@@ -29,6 +30,15 @@ os.makedirs("exports", exist_ok=True)
 os.makedirs("reports", exist_ok=True)
 os.makedirs("charts", exist_ok=True)
 os.makedirs("logs", exist_ok=True)
+
+# Logging setup
+logging.basicConfig(
+    filename="logs/scanner.log",
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+logger = logging.getLogger(__name__)
 
 console = Console()
 
@@ -58,6 +68,8 @@ class IntelligentScanner:
                 style="bold cyan"
             )
         )
+
+        logger.info(f"Scan started on target: {self.target}")
 
         try:
 
@@ -112,6 +124,11 @@ class IntelligentScanner:
                                 "version": version
                             })
 
+                            logger.info(
+                                f"Open port found: {port} "
+                                f"({service_name} {version})"
+                            )
+
                             self.check_vulnerabilities(
                                 port,
                                 service_name,
@@ -122,6 +139,7 @@ class IntelligentScanner:
             console.print(
                 f"[red]Scan failed:[/red] {error}"
             )
+            logger.error(f"Scan failed: {error}")
 
     def check_vulnerabilities(
         self,
@@ -289,6 +307,14 @@ class IntelligentScanner:
             console.print(
                 f"[green]JSON exported:[/green] {json_path}"
             )
+
+            logger.info(f"Data exported to {csv_path} and {json_path}")
+
+        else:
+            console.print(
+                "[yellow]No vulnerabilities to export.[/yellow]"
+            )
+            logger.warning("Export skipped — no vulnerabilities found.")
 
     def generate_visualizations(self):
         """
