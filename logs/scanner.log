@@ -23,3 +23,10 @@
 2026-05-07 19:29:28 [INFO] Open port found: 445 (microsoft-ds )
 2026-05-07 19:29:36 [INFO] Open port found: 3306 (mysql 8.0.28)
 2026-05-07 19:29:57 [INFO] Data exported to exports/scan_results_20260507_192957.csv and exports/scan_results_20260507_192957.json
+2026-05-07 22:07:24 [INFO] Scan started on target: 127.0.0.1
+2026-05-07 22:07:36 [INFO] Open port found: 135 (msrpc )
+2026-05-07 22:07:39 [INFO] Open port found: 445 (microsoft-ds )
+2026-05-07 22:07:42 [INFO] Open port found: 3306 (mysql 8.0.28)
+2026-05-07 22:07:46 [INFO] Data exported to exports/scan_results_20260507_220746.csv and exports/scan_results_20260507_220746.json
+2026-05-07 22:09:21 [INFO] Scan started on target: kjdbf
+2026-05-07 22:09:30 [WARNING] Export skipped — no vulnerabilities found.
